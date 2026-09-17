@@ -1,0 +1,54 @@
+@layer components {
+  .trace-path {
+    container-type: inline-size;
+
+    .trace-path-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .trace-path-step {
+      position: relative;
+      display: grid;
+      gap: var(--space-m);
+      margin: 0;
+      padding: 0 0 var(--space-l) 2.5rem;
+      border-inline-start: 2px solid var(--text-color);
+    }
+
+    .trace-path-step:last-child {
+      padding-block-end: 0;
+    }
+
+    .trace-path-step::before {
+      content: '';
+      position: absolute;
+      inset-inline-start: -0.48rem;
+      inset-block-start: 0.2rem;
+      inline-size: 0.82rem;
+      block-size: 0.82rem;
+      border: 2px solid var(--text-color);
+      background: var(--accent);
+    }
+
+    .trace-path-stage,
+    .trace-path-detail {
+      min-inline-size: 0;
+    }
+
+    .trace-path-stage > p {
+      font-size: var(--body-font-size-s);
+    }
+
+    @container (width >= 48em) {
+      .trace-path-step {
+        grid-template-columns: 0.7fr 1.3fr;
+        gap: 1rem 3rem;
+      }
+
+      .trace-path-detail {
+        grid-column: 2;
+      }
+    }
+  }
+}

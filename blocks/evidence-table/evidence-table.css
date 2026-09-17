@@ -1,0 +1,32 @@
+@layer components {
+  .evidence-table {
+    max-inline-size: 100%;
+    overflow-x: auto;
+
+    table {
+      inline-size: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    :where(th, td) {
+      padding: 1.15rem;
+      text-align: start;
+      vertical-align: top;
+      border-block-end: 1px solid var(--border-color);
+      min-inline-size: 8rem;
+    }
+
+    th {
+      font-family: var(--mono-font-family);
+      font-weight: 600;
+      font-size: 0.76rem;
+      background: var(--text-color);
+      color: var(--background-color);
+    }
+
+    td > * + * {
+      margin-block-start: 0.5em;
+    }
+  }
+}

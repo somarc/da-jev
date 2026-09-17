@@ -79,6 +79,10 @@ function buildWidgetAutoBlocks(main) {
  */
 function buildAutoBlocks(main) {
   try {
+    // Metadata-only source sections can become empty in delivered .plain.html.
+    [...main.children].forEach((section) => {
+      if (!section.children.length && !section.textContent.trim()) section.remove();
+    });
     // auto load `*/fragments/*` references
     const fragments = [...main.querySelectorAll('a[href*="/fragments/"]')].filter((f) => !f.closest('.fragment'));
     if (fragments.length > 0) {
@@ -166,7 +170,8 @@ async function loadEager(doc) {
   if (main) {
     decorateMain(main);
     document.body.classList.add('appear');
-    await loadSection(main.querySelector('.section'), waitForFirstImage);
+    const firstSection = main.querySelector('.section');
+    if (firstSection) await loadSection(firstSection, waitForFirstImage);
   }
 
   try {
@@ -188,6 +193,9 @@ async function loadLazy(doc) {
 
   const main = doc.querySelector('main');
   await loadSections(main);
+
+  const { default: enhanceReading } = await import('./page-tools.js');
+  enhanceReading(main);
 
   const { hash } = window.location;
   const element = hash ? doc.getElementById(hash.substring(1)) : false;

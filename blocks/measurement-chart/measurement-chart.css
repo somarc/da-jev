@@ -1,0 +1,75 @@
+@layer components {
+  .measurement-chart {
+    padding: clamp(1rem, 3vw, 2rem);
+    border: 1px solid var(--text-color);
+    background: var(--panel-color);
+
+    .measurement-chart-picker {
+      display: grid;
+      gap: 0.5rem;
+      max-inline-size: 26rem;
+      font-size: 0.8rem;
+      font-weight: 650;
+    }
+
+    .measurement-chart-caveat {
+      margin-block: 1rem 1.5rem;
+      font-size: 0.86rem;
+    }
+
+    .measurement-chart-bars {
+      display: grid;
+      gap: 2rem;
+    }
+
+    .measurement-chart-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.65rem 1.25rem;
+      min-inline-size: 0;
+    }
+
+    h3 {
+      font-family: var(--body-font-family);
+      font-size: 1.03rem;
+      font-weight: 650;
+      letter-spacing: normal;
+      line-height: 1.5;
+    }
+
+    .measurement-chart-value {
+      font-family: var(--mono-font-family);
+      font-size: 0.9rem;
+    }
+
+    .measurement-chart-track {
+      grid-column: 1 / -1;
+      block-size: 1.05rem;
+      background: var(--light-color);
+    }
+
+    .measurement-chart-fill {
+      block-size: 100%;
+      background: var(--accent);
+      border: 1px solid var(--text-color);
+    }
+
+    .measurement-chart-context,
+    .measurement-chart-scope {
+      grid-column: 1 / -1;
+      font-size: 0.77rem;
+      line-height: 1.6;
+    }
+
+    .measurement-chart-context {
+      font-family: var(--mono-font-family);
+    }
+
+    .measurement-chart-source {
+      padding-block-start: 1.4rem;
+      margin-block-start: 1.8rem;
+      border-block-start: 1px solid var(--border-color);
+      font-size: 0.8rem;
+    }
+  }
+}

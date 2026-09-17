@@ -1,0 +1,60 @@
+@layer components {
+  .metric-strip {
+    container-type: inline-size;
+
+    .metric-strip-items {
+      display: grid;
+      border-block: 1px solid var(--text-color);
+    }
+
+    .metric-strip-item {
+      display: grid;
+      align-content: start;
+      gap: 0.85rem;
+      min-inline-size: 0;
+      padding: 1.5rem;
+    }
+
+    .metric-strip-item + .metric-strip-item {
+      border-block-start: 1px solid var(--border-color);
+    }
+
+    .metric-strip-value {
+      font-family: var(--heading-font-family);
+      font-size: clamp(2.5rem, 5cqi, 4rem);
+      line-height: 1.1;
+      letter-spacing: -0.055em;
+    }
+
+    .metric-strip-value strong {
+      font-weight: 400;
+    }
+
+    .compact-value {
+      font-family: var(--mono-font-family);
+      font-size: clamp(1.25rem, 2.8cqi, 2rem);
+      letter-spacing: -0.05em;
+      overflow-wrap: anywhere;
+    }
+
+    .metric-strip-label {
+      font-weight: 650;
+    }
+
+    .metric-strip-note {
+      font-size: 0.84rem;
+      line-height: 1.55;
+    }
+
+    @container (width >= 44em) {
+      .metric-strip-items {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .metric-strip-item + .metric-strip-item {
+        border-block-start: 0;
+        border-inline-start: 1px solid var(--border-color);
+      }
+    }
+  }
+}

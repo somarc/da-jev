@@ -1,20 +1,55 @@
-footer {
-  background-color: var(--light-color);
-  font-size: var(--body-font-size-xs);
-}
+@layer components {
+  .footer {
+    --text-color: var(--paper);
+    --background-color: var(--ink);
+    --link-color: var(--paper);
+    --border-color: color-mix(in oklab, var(--paper) 35%, transparent);
 
-footer .footer > div {
-  margin: auto;
-  max-width: 1200px;
-  padding: 40px 24px 24px;
-}
+    container-type: inline-size;
+    padding: var(--space-xl) var(--gutter);
+    background: var(--ink);
+    color: var(--paper);
 
-footer .footer p {
-  margin: 0;
-}
+    .footer-inner {
+      display: grid;
+      gap: var(--space-l);
+      max-inline-size: var(--content-width);
+      margin-inline: auto;
+    }
 
-@media (width >= 900px) {
-  footer .footer > div {
-    padding: 40px 32px 24px;
+    h2 {
+      max-inline-size: 16ch;
+    }
+
+    p {
+      max-inline-size: 58ch;
+      font-size: 0.95rem;
+    }
+
+    ul {
+      padding-inline-start: 1.2rem;
+    }
+
+    li {
+      margin: 0;
+    }
+
+    li::marker {
+      color: var(--accent);
+    }
+
+    li a {
+      display: inline-flex;
+      align-items: center;
+      min-block-size: 2.75rem;
+      font-size: 0.9rem;
+    }
+
+    @container (width >= 50em) {
+      .footer-inner {
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 6rem;
+      }
+    }
   }
 }

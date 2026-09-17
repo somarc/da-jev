@@ -1,0 +1,83 @@
+@layer components {
+  .experiment-list {
+    container-type: inline-size;
+
+    .experiment-list-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 1rem;
+      margin-block-end: 2rem;
+    }
+
+    .experiment-list-label {
+      display: grid;
+      gap: 0.45rem;
+      flex: 1 1 14rem;
+      font-size: 0.8rem;
+      font-weight: 650;
+    }
+
+    .experiment-list-label input {
+      inline-size: 100%;
+    }
+
+    .experiment-list-status {
+      flex-basis: 100%;
+      font-family: var(--mono-font-family);
+      font-size: 0.75rem;
+    }
+
+    .experiment-list-items {
+      border-block-start: 1px solid var(--text-color);
+    }
+
+    .experiment-list-item {
+      display: grid;
+      gap: 1.5rem;
+      padding-block: 2rem;
+      border-block-end: 1px solid var(--border-color);
+    }
+
+    .experiment-list-item > div {
+      min-inline-size: 0;
+    }
+
+    .experiment-list-category {
+      font-family: var(--mono-font-family);
+      font-size: 0.73rem;
+      line-height: 1.6;
+    }
+
+    .experiment-list-category > :first-child {
+      display: inline-block;
+      border-block-end: 0.2rem solid var(--accent);
+      padding-block-end: 0.35rem;
+      text-transform: uppercase;
+    }
+
+    .experiment-list-copy h3 {
+      font-size: clamp(1.25rem, 2.3cqi, 2rem);
+      max-inline-size: 29ch;
+    }
+
+    .experiment-list-copy a {
+      text-decoration: none;
+    }
+
+    .experiment-list-copy a:hover {
+      text-decoration: underline;
+    }
+
+    .experiment-list-scope {
+      font-size: 0.84rem;
+    }
+
+    @container (width >= 48em) {
+      .experiment-list-item {
+        grid-template-columns: 0.55fr 1.65fr 0.65fr;
+        gap: 2.5rem;
+      }
+    }
+  }
+}
