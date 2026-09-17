@@ -4,6 +4,17 @@ export default function decorate(block) {
   const rows = [...block.children];
   if (!rows.length) return;
   const table = document.createElement('table');
+  let previous = block.closest('.evidence-table-wrapper')?.previousElementSibling;
+  let heading;
+  while (previous && !heading) {
+    if (previous.classList.contains('default-content-wrapper')) {
+      heading = [...previous.querySelectorAll('h2, h3')].at(-1);
+    }
+    previous = previous.previousElementSibling;
+  }
+  const caption = document.createElement('caption');
+  caption.className = 'visually-hidden';
+  caption.textContent = heading?.textContent.trim() || 'Evidence table';
   const head = document.createElement('thead');
   const body = document.createElement('tbody');
   rows.forEach((row, index) => {
@@ -16,6 +27,6 @@ export default function decorate(block) {
     });
     (index === 0 ? head : body).append(tr);
   });
-  table.append(head, body);
+  table.append(caption, head, body);
   block.replaceChildren(table);
 }
