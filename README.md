@@ -1,34 +1,54 @@
-# Your Project's Title...
-Your project's description...
+# Jev Field Lab
 
-## Environments
-- Preview: https://main--{repo}--{owner}.aem.page/
-- Live: https://main--{repo}--{owner}.aem.live/
+A native AEM Edge Delivery site about bounded model judgments, deterministic operations, and inspectable evidence. DA owns pages and public datasets; this repository owns presentation and the read-only experiment controller.
 
-## Documentation
+- [Preview](https://main--da-jev--somarc.aem.page/)
+- [Live](https://main--da-jev--somarc.aem.live/)
+- [Visual direction](DIRECTION.md)
+- [Authoring contracts](docs/authoring.md)
 
-Before using the aem-boilerplate, we recommand you to go through the documentation on https://www.aem.live/docs/ and more specifically:
-1. [Developer Tutorial](https://www.aem.live/developer/tutorial)
-2. [The Anatomy of a Project](https://www.aem.live/developer/anatomy-of-a-project)
-3. [Web Performance](https://www.aem.live/developer/keeping-it-100)
-4. [Markup, Sections, Blocks, and Auto Blocking](https://www.aem.live/developer/markup-sections-blocks)
-
-## Installation
+## Development
 
 ```sh
-npm i
-```
-
-## Linting
-
-```sh
+npm ci
 npm run lint
+npm test
+npx -y @adobe/aem-cli up
 ```
 
-## Local development
+Use local code with previewed DA content. Inspect the actual `.plain.html` markup before changing a block. There is no build step or runtime framework; dependencies are development-only. Do not modify the vendored `scripts/aem.js`.
 
-1. Create a new repository based on the `aem-boilerplate` template
-1. Add the [AEM Code Sync GitHub App](https://github.com/apps/aem-code-sync) to the repository
-1. Install the [AEM CLI](https://github.com/adobe/helix-cli): `npm install -g @adobe/aem-cli`
-1. Start AEM Proxy: `aem up` (opens your browser at `http://localhost:3000`)
-1. Open the `{repo}` directory in your favorite IDE and start coding :)
+The `trace-hero`, `trace-path`, `metric-strip`, `experiment-list`, `case-explorer`, `measurement-chart`, `evidence-table`, `callout`, and `accordion` blocks use authored rows. Interactive viewers fetch bounded, complete, same-origin `/data/*.json` records and retain the source link on failure. A visitor interaction never invokes a model or a CLI command.
+
+Styles use explicit cascade layers, scoped block selectors, intrinsic/container layouts, and self-hosted Archivo Black, Instrument Sans, and Roboto Mono. Font licenses are retained in `fonts/licenses/`.
+
+## Bounded controller
+
+`tools/lab/read-only-probe.mjs` is a small experiment runner, not a general agent or production authorization system. It offers four code-owned read capabilities and `none`, for a fixed site and two allowlisted source paths. It checks source/descriptor identity, target resolution, a short-lived preparation, answer shape, and operation-specific results. It never executes model-supplied arguments or `next[]`.
+
+Supply your own current CLI checkout, branch, exact model version, and an **external** evidence directory. Keep operational evidence and authored content outside this Git checkout.
+
+```sh
+node tools/lab/read-only-probe.mjs prepare \
+  --cli-root "$DA_CLI_ROOT" --branch "$BRANCH" \
+  --path /how-it-works.html --model "$JEV_MODEL" \
+  > "$PROOF_DIR/preparation.json"
+
+node tools/lab/read-only-probe.mjs run \
+  --prepared "$PROOF_DIR/preparation.json" \
+  --response "$PROOF_DIR/response.json" \
+  --digest "$SEPARATELY_RETAINED_PREPARATION_DIGEST" \
+  > "$PROOF_DIR/run.json"
+```
+
+The retained digest must come from trusted preparation, not from a model or a subsequently edited input file. Model responses are advisory and passed across an operator-mediated credential broker boundary; credentials do not belong in this repository or command arguments. The runner does not make the model request itself.
+
+Every operational DA invocation uses explicit `--qmd`. Metadata help may intentionally bypass operational journaling. Primary and receipt outcomes are separate, partial evidence is retained, and completed operations are not replayed to repair receipts. CLI process wall times include their QMD work; they are not end-to-end agent timings.
+
+**A valid operation is not necessarily the right task.** The published experiment retains routing disagreements, a high-confidence misroute, and a post-hoc refinement that did not improve exact-label agreement. Public records are in DA, not test fixtures in Git.
+
+`tools/lab/**` is excluded from EDS delivery by `.hlxignore`. Source and tests remain inspectable in GitHub.
+
+## Release boundary
+
+Code merges to `main` ship independently of DA content. Preview and live publication are distinct operations. Verify code, authored source, delivered data, rendered pages, and receipt states before release. Never treat a model's confidence or a successful process exit as publication authority.

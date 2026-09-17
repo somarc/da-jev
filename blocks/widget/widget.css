@@ -1,3 +1,5 @@
-.widget {
-  display: block;
+@layer components {
+  .widget {
+    display: block;
+  }
 }

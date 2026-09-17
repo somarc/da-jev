@@ -1,20 +1,17 @@
 import { getMetadata } from '../../scripts/aem.js';
 import { loadFragment } from '../fragment/fragment.js';
 
-/**
- * loads and decorates the footer
- * @param {Element} block The footer block element
- */
 export default async function decorate(block) {
-  // load footer as fragment
-  const footerMeta = getMetadata('footer');
-  const footerPath = footerMeta ? new URL(footerMeta, window.location).pathname : '/footer';
-  const fragment = await loadFragment(footerPath);
-
-  // decorate footer DOM
-  block.textContent = '';
-  const footer = document.createElement('div');
-  while (fragment.firstElementChild) footer.append(fragment.firstElementChild);
-
-  block.append(footer);
+  if (block.dataset.decorated) return;
+  block.dataset.decorated = 'true';
+  const path = new URL(getMetadata('footer') || '/footer', window.location.href).pathname;
+  const fragment = await loadFragment(path);
+  if (!fragment) return;
+  const inner = document.createElement('div');
+  inner.className = 'footer-inner';
+  [...fragment.children].filter((section) => section.textContent.trim()).forEach((section) => {
+    section.querySelectorAll('.default-content-wrapper').forEach((wrapper) => wrapper.classList.add('lab-flow'));
+    inner.append(section);
+  });
+  block.replaceChildren(inner);
 }

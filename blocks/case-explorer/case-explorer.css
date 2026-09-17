@@ -1,0 +1,189 @@
+@layer components {
+  .case-explorer {
+    container-type: inline-size;
+    border: 1px solid var(--text-color);
+    background: var(--panel-color);
+
+    .case-explorer-header {
+      display: grid;
+      gap: 1rem;
+      padding: clamp(1rem, 3cqi, 2rem);
+      background: var(--accent);
+      color: var(--ink);
+      border-block-end: 1px solid var(--ink);
+    }
+
+    .case-explorer-replay {
+      font-family: var(--mono-font-family);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .case-explorer-picker {
+      display: grid;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 650;
+    }
+
+    .case-explorer-picker select {
+      inline-size: 100%;
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 0.9rem;
+    }
+
+    .case-explorer-body {
+      padding: clamp(1rem, 3cqi, 2rem);
+    }
+
+    .case-explorer-verdict {
+      display: inline-block;
+      padding: 0.25rem 0.55rem;
+      border: 1px solid var(--text-color);
+      font-family: var(--mono-font-family);
+      font-size: 0.7rem;
+      margin-block-end: 1.5rem;
+    }
+
+    .case-explorer-trace {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .case-explorer-trace > section {
+      min-inline-size: 0;
+      padding-block-start: 1rem;
+      border-block-start: 0.2rem solid var(--text-color);
+    }
+
+    .case-explorer-trace h3,
+    .case-explorer-distribution h3 {
+      font-family: var(--mono-font-family);
+      font-size: 0.72rem;
+      line-height: 1.5;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    blockquote {
+      font-size: clamp(1.05rem, 2.1cqi, 1.45rem);
+      border: 0;
+      padding: 0;
+    }
+
+    .case-explorer-selection {
+      font-family: var(--mono-font-family);
+      font-size: clamp(1.05rem, 2cqi, 1.4rem);
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    .case-explorer-reference,
+    .case-explorer-note {
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    .case-explorer-distribution {
+      margin-block: 2rem 1.5rem;
+    }
+
+    .case-explorer-probabilities {
+      list-style: none;
+      padding: 0;
+      margin-block-start: 1rem;
+    }
+
+    .case-explorer-probabilities li {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.35rem 1rem;
+      margin: 0;
+      padding-block: 0.65rem;
+    }
+
+    .case-explorer-option {
+      font-family: var(--mono-font-family);
+      font-size: 0.77rem;
+      overflow-wrap: anywhere;
+    }
+
+    .case-explorer-probability {
+      font-family: var(--mono-font-family);
+      font-size: 0.77rem;
+    }
+
+    .case-explorer-track {
+      grid-column: 1 / -1;
+      display: block;
+      block-size: 0.38rem;
+      background: var(--light-color);
+    }
+
+    .case-explorer-fill {
+      display: block;
+      block-size: 100%;
+      background: var(--text-color);
+    }
+
+    .is-selected .case-explorer-fill {
+      background: var(--accent);
+      outline: 1px solid var(--text-color);
+    }
+
+    .case-explorer-more {
+      margin-block-start: 0.8rem;
+    }
+
+    .case-explorer-more > ol {
+      max-block-size: 24rem;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+
+    summary {
+      min-block-size: 2.75rem;
+      padding-block: 0.65rem;
+      cursor: pointer;
+      font-size: 0.83rem;
+    }
+
+    .case-explorer-provenance {
+      margin-block: 1.5rem 0.75rem;
+      font-family: var(--mono-font-family);
+      font-size: 0.68rem;
+      overflow-wrap: anywhere;
+    }
+
+    .case-explorer-reference-link {
+      font-size: 0.86rem;
+    }
+
+    .case-explorer-raw {
+      margin-block-start: 1rem;
+    }
+
+    .case-explorer-raw pre {
+      max-block-size: 28rem;
+    }
+
+    .case-explorer-source {
+      padding: 1rem clamp(1rem, 3cqi, 2rem);
+      border-block-start: 1px solid var(--border-color);
+      font-size: 0.8rem;
+    }
+
+    .case-explorer-load-state {
+      padding: 1.5rem;
+    }
+
+    @container (width >= 52em) {
+      .case-explorer-trace {
+        grid-template-columns: 1.25fr 1fr 1.1fr;
+        gap: 2rem;
+      }
+    }
+  }
+}

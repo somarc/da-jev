@@ -1,0 +1,109 @@
+@layer components {
+  .trace-hero {
+    container-type: inline-size;
+
+    --heading-font-size-xxl: clamp(2.9rem, 8cqi, 6.6rem);
+
+    .trace-hero-layout {
+      display: grid;
+      align-items: center;
+      gap: var(--space-l);
+    }
+
+    .trace-hero-copy {
+      min-inline-size: 0;
+    }
+
+    .trace-hero-eyebrow {
+      font-family: var(--mono-font-family);
+      font-size: 0.73rem;
+      line-height: 1.6;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-inline-size: 12ch;
+    }
+
+    .trace-hero-ribbon p {
+      font-size: 0.94rem;
+      line-height: 1.5;
+    }
+
+    .trace-hero-copy > p {
+      max-inline-size: 46ch;
+    }
+
+    .trace-hero-copy > h1 + p {
+      font-size: clamp(1.1rem, 1.65cqi, 1.45rem);
+    }
+
+    .button-wrapper {
+      display: inline-block;
+      margin-inline-end: 0.7rem;
+    }
+
+    .trace-hero-ribbon {
+      min-inline-size: 0;
+      padding: 1rem;
+    }
+
+    .trace-hero-ribbon ol {
+      list-style: none;
+      padding: 0;
+    }
+
+    .trace-hero-ribbon li {
+      position: relative;
+      margin-block-start: 0;
+      padding: 1.4rem 3.2rem 1.4rem 1.4rem;
+      background: var(--ink);
+      color: var(--paper);
+      transform: rotate(-1deg);
+    }
+
+    .trace-hero-ribbon li + li {
+      margin-block-start: 0.7rem;
+    }
+
+    .trace-hero-ribbon li:nth-child(even) {
+      transform: translateX(0.55rem) rotate(1deg);
+    }
+
+    .trace-hero-ribbon li:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      inset-block-end: -1rem;
+      inset-inline-start: 20%;
+      inline-size: 1.4rem;
+      block-size: 1.1rem;
+      background: var(--ink);
+    }
+
+    .trace-hero-ribbon strong {
+      display: block;
+      margin-block-end: 0.5rem;
+      font-family: var(--mono-font-family);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .trace-hero-number {
+      position: absolute;
+      inset-block-start: 1.3rem;
+      inset-inline-end: 1rem;
+      color: var(--accent);
+      font-family: var(--mono-font-family);
+      font-size: 0.8rem;
+    }
+
+    @container (width >= 52rem) {
+      &.has-trace .trace-hero-layout {
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 4cqi;
+      }
+    }
+  }
+}

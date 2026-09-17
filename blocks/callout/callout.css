@@ -1,0 +1,16 @@
+@layer components {
+  .callout {
+    padding: clamp(1.25rem, 3vw, 2.5rem);
+    border: 1px solid var(--border-color);
+    border-inline-start: 0.5rem solid var(--text-color);
+    background: var(--panel-color);
+
+    &.warning {
+      border-inline-start-color: var(--accent);
+    }
+
+    .callout-body {
+      max-inline-size: 76ch;
+    }
+  }
+}
