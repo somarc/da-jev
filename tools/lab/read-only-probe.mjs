@@ -4,7 +4,9 @@
 /* eslint-disable no-restricted-syntax, no-await-in-loop, no-console */
 import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
-import { readFile, realpath } from 'node:fs/promises';
+import {
+  lstat, readdir, readFile, realpath,
+} from 'node:fs/promises';
 import { join, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -85,13 +87,78 @@ function prefix(prepared) {
     '--branch', prepared.target.branch, '--env', 'prod', '--format', 'json', '--qmd'];
 }
 
-async function sourceIdentity(root, exec) {
+export async function sourceIdentity(root, exec, packageBinding, packageDigest) {
   const path = await realpath(root);
   const bin = await realpath(join(path, 'bin/da.js'));
   const child = relative(path, bin);
   requireValue(child && !child.startsWith('..') && !isAbsolute(child), 'CLI binary escapes source root');
   const pkg = json(await readFile(join(path, 'package.json'), 'utf8'));
   requireValue(pkg.name === '@somarc/da-cli', 'Wrong CLI package');
+  if (packageBinding) {
+    requireValue(digest(packageBinding) === packageDigest, 'Package binding differs from the reviewed digest');
+    requireValue(packageBinding.package === pkg.name && packageBinding.version === pkg.version
+      && typeof packageBinding.releaseGitHead === 'string'
+      && /^[a-f0-9]{40}$/.test(packageBinding.releaseGitHead)
+      && typeof packageBinding.tarballIntegrity === 'string'
+      && packageBinding.tarballIntegrity.startsWith('sha512-'), 'Invalid package provenance');
+    const integrityBytes = Buffer.from(packageBinding.tarballIntegrity.slice(7), 'base64');
+    requireValue(integrityBytes.length === 64
+      && `sha512-${integrityBytes.toString('base64')}` === packageBinding.tarballIntegrity, 'Invalid package integrity');
+    const files = packageBinding.manifest;
+    requireValue(Array.isArray(files) && files.length >= 2 && files.length <= 2048
+      && files.some((file) => file.path === 'package.json')
+      && files.some((file) => file.path === 'bin/da.js'), 'Incomplete package manifest');
+    const seen = new Set();
+    let inspectedBytes = 0;
+    for (const file of files) {
+      requireValue(typeof file.path === 'string' && /^[A-Za-z0-9_.@/-]+$/.test(file.path)
+        && !isAbsolute(file.path) && !file.path.split('/').some((part) => ['', '.', '..'].includes(part))
+        && !file.path.startsWith('node_modules/') && !seen.has(file.path)
+        && typeof file.sha256 === 'string' && /^[a-f0-9]{64}$/.test(file.sha256), 'Invalid package manifest entry');
+      seen.add(file.path);
+      const name = join(path, file.path);
+      const info = await lstat(name);
+      requireValue(info.isFile() && await realpath(name) === name, 'Package file is not a regular contained file');
+      inspectedBytes += info.size;
+      requireValue(info.size <= 8 * 1024 * 1024 && inspectedBytes <= 64 * 1024 * 1024, 'Package inspection limit exceeded');
+      const bytes = await readFile(name);
+      requireValue(createHash('sha256').update(bytes).digest('hex') === file.sha256, 'Installed package bytes changed');
+    }
+    const pending = [''];
+    const installed = [];
+    let entries = 0;
+    while (pending.length) {
+      const directory = pending.pop();
+      requireValue(directory.split('/').length <= 32, 'Package inspection depth exceeded');
+      for (const entry of await readdir(join(path, directory), { withFileTypes: true })) {
+        // eslint-disable-next-line no-continue
+        if (!directory && entry.name === 'node_modules') continue; // Dependency bytes are outside this package binding.
+        entries += 1;
+        requireValue(entries <= 8192, 'Package inspection entry limit exceeded');
+        const name = directory ? `${directory}/${entry.name}` : entry.name;
+        if (entry.isDirectory()) pending.push(name);
+        else {
+          requireValue(entry.isFile(), 'Package contains a non-regular entry');
+          installed.push(name);
+        }
+      }
+    }
+    requireValue(digest(installed.sort()) === digest([...seen].sort()), 'Package manifest does not cover the complete first-party file set');
+    return {
+      root: path,
+      bin,
+      sha: packageBinding.releaseGitHead,
+      cliVersion: pkg.version,
+      kind: 'reviewed-npm-package',
+      packageBinding,
+      packageDigest,
+    };
+  }
+  const top = await exec('git', ['-C', path, 'rev-parse', '--show-toplevel']);
+  requireValue(
+    top.exitCode === 0 && await realpath(top.stdout.trim()) === path,
+    'CLI root is not its own Git checkout; use a reviewed package binding for an installed release',
+  );
   const head = await exec('git', ['-C', path, 'rev-parse', 'HEAD']);
   const status = await exec('git', ['-C', path, 'status', '--porcelain=v1']);
   requireValue(head.exitCode === 0 && /^[a-f0-9]{40}$/.test(head.stdout.trim()), 'Missing source identity');
@@ -141,7 +208,7 @@ async function resolvePath(prepared, exec) {
 }
 
 export async function prepare({
-  cliRoot, branch, path, model,
+  cliRoot, branch, path, model, packageBinding, packageDigest,
 }, exec = execute) {
   requireValue(PATHS.includes(path), 'Path is outside the lab allowlist');
   requireValue(typeof model === 'string' && /^jev-\d+\.\d+\.\d+$/.test(model), 'Pin an exact Jev model');
@@ -155,7 +222,7 @@ export async function prepare({
     schemaVersion: 'da-jev.read-only-preparation.v1',
     mutationAuthorized: false,
     model,
-    source: await sourceIdentity(cliRoot, exec),
+    source: await sourceIdentity(cliRoot, exec, packageBinding, packageDigest),
     target: {
       org: 'somarc', repo: 'da-jev', environment: 'prod', branch, path,
     },
@@ -260,7 +327,9 @@ export async function run(prepared, response, expectedDigest, exec = execute) {
     'Response model or question identities do not match this bounded protocol',
   );
   const selections = QUESTION_IDS.map((id) => [id, selectedAction(response.answers[id])]);
-  const source = await sourceIdentity(prepared.source.root, exec);
+  const { root, packageBinding, packageDigest } = prepared.source;
+  const identity = () => sourceIdentity(root, exec, packageBinding, packageDigest);
+  const source = await identity();
   requireValue(digest(source) === digest(prepared.source), 'CLI source changed since preparation');
   const results = [];
   for (const [questionId, id] of selections) {
@@ -284,7 +353,7 @@ export async function run(prepared, response, expectedDigest, exec = execute) {
         if (id === 'check_page_freshness') args.push('--boundary', 'preview');
         args.push('--', prepared.target.path);
       }
-      const beforeDispatch = await sourceIdentity(prepared.source.root, exec);
+      const beforeDispatch = await identity();
       requireValue(digest(beforeDispatch) === digest(prepared.source), 'Source drift before dispatch');
       validatePreparation(prepared, expectedDigest); // Slow preflight work cannot extend the lease.
       const result = await da(prepared, args, exec);
@@ -326,7 +395,7 @@ export async function run(prepared, response, expectedDigest, exec = execute) {
   }
   let integrity;
   try {
-    const after = await sourceIdentity(prepared.source.root, exec);
+    const after = await identity();
     integrity = { stable: digest(after) === digest(prepared.source), afterSha: after.sha };
   } catch (error) {
     integrity = { stable: false, reason: error.message };
@@ -358,7 +427,12 @@ async function main() {
   let result;
   if (mode === 'prepare') {
     result = await prepare({
-      cliRoot: opts['cli-root'], branch: opts.branch, path: opts.path, model: opts.model,
+      cliRoot: opts['cli-root'],
+      branch: opts.branch,
+      path: opts.path,
+      model: opts.model,
+      packageBinding: opts['package-binding'] ? json(await readFile(opts['package-binding'], 'utf8')) : undefined,
+      packageDigest: opts['package-digest'],
     });
   } else {
     requireValue(mode === 'run', 'Expected prepare or run');
