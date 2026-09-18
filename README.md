@@ -6,6 +6,7 @@ A native AEM Edge Delivery site about bounded model judgments, deterministic ope
 - [Live](https://main--da-jev--somarc.aem.live/)
 - [Visual direction](DIRECTION.md)
 - [Authoring contracts](docs/authoring.md)
+- [Repeatable evaluation loop](docs/evaluation-loop.md)
 
 ## Development
 
@@ -28,6 +29,17 @@ Styles use explicit cascade layers, scoped block selectors, intrinsic/container 
 
 Supply your own current CLI checkout, branch, exact model version, and an **external** evidence directory. Keep operational evidence and authored content outside this Git checkout.
 
+A checkout must be its own Git root. An ancestor repository (for example Homebrew
+above a global npm install) is not the CLI's source identity. For an installed
+release, first verify the registry tarball integrity and compare every packaged
+file with the installation. Retain an external binding with `package`, `version`,
+`releaseGitHead`, `tarballIntegrity`, and the complete `manifest` of
+`{path, sha256}` entries. Pass that reviewed binding and its separately retained
+`digest()` value using `--package-binding` and `--package-digest` during preparation.
+The runner rechecks the complete first-party file set and bytes before dispatch.
+Dependency bytes, registry signatures and OS isolation are outside this binding;
+the binding does not independently authenticate the operator's provenance claim.
+
 ```sh
 node tools/lab/read-only-probe.mjs prepare \
   --cli-root "$DA_CLI_ROOT" --branch "$BRANCH" \
@@ -42,6 +54,12 @@ node tools/lab/read-only-probe.mjs run \
 ```
 
 The retained digest must come from trusted preparation, not from a model or a subsequently edited input file. Model responses are advisory and passed across an operator-mediated credential broker boundary; credentials do not belong in this repository or command arguments. The runner does not make the model request itself.
+
+Several single-objective API responses may be composed into the five-answer runner
+input. Retain each original request, response, ID and digest separately, and label
+the combined input as a local composition, not a single API response. The runner
+validates the selected action interface; it does not authenticate model provenance
+or establish task-level acceptance.
 
 Every operational DA invocation uses explicit `--qmd`. Metadata help may intentionally bypass operational journaling. Primary and receipt outcomes are separate, partial evidence is retained, and completed operations are not replayed to repair receipts. CLI process wall times include their QMD work; they are not end-to-end agent timings.
 

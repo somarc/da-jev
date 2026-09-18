@@ -1,13 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import {
-  mkdtemp, mkdir, writeFile, rm,
+  mkdtemp, mkdir, readFile, realpath, writeFile, rm, symlink,
 } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
   ACTIONS, QUESTION_IDS, TTL, assess, deliveryPath, digest, journal, prepare, run,
-  selectedAction, validatePreparation,
+  selectedAction, sourceIdentity, validatePreparation,
 } from './read-only-probe.mjs';
 
 test('source document paths and resolved delivery paths are distinct contracts', () => {
@@ -68,7 +69,7 @@ test('primary and receipt outcomes are separate; metadata has no receipt claim',
 });
 
 async function mockRuntime(t) {
-  const root = await mkdtemp(join(tmpdir(), 'da-jev-probe-test-'));
+  const root = await realpath(await mkdtemp(join(tmpdir(), 'da-jev-probe-test-')));
   t.after(() => rm(root, { recursive: true, force: true }));
   await mkdir(join(root, 'bin'));
   await writeFile(join(root, 'bin/da.js'), '// Test-only placeholder; never executed.\n');
@@ -87,7 +88,10 @@ async function mockRuntime(t) {
   });
   const exec = async (file, argv) => {
     state.calls.push({ file, argv: [...argv] });
-    if (file === 'git') return result(argv.includes('rev-parse') ? state.sha : '');
+    if (file === 'git') {
+      if (argv.includes('--show-toplevel')) return result(root);
+      return result(argv.includes('rev-parse') ? state.sha : '');
+    }
     assert.ok(argv.includes('--qmd'));
     assert.ok(!argv.includes('--commit'));
     const tail = argv.slice(argv.indexOf('--qmd') + 1);
@@ -100,7 +104,7 @@ async function mockRuntime(t) {
       }));
     }
     if (tail[0] === 'resolve') {
-      state.onResolve?.();
+      await state.onResolve?.();
       return result(JSON.stringify({
         ok: true,
         operation: 'resolve',
@@ -203,4 +207,92 @@ test('expiry during preflight prevents primary dispatch', async (t) => {
   const value = await run(f.prepared, f.response, f.prepared.preparationDigest, f.exec);
   assert.match(value.results[0].primary.reason, /expired/);
   assert.equal(f.state.reads, 0);
+});
+
+test('a clean ancestor Git repository cannot identify the CLI package', async (t) => {
+  const f = await mockRuntime(t);
+  const parentGit = async (file, argv) => (argv.includes('--show-toplevel')
+    ? { exitCode: 0, stdout: tmpdir() } : f.exec(file, argv));
+  await assert.rejects(sourceIdentity(f.prepared.source.root, parentGit), /own Git checkout/);
+  assert.equal(f.state.reads, 0);
+});
+
+async function packageFixture(t) {
+  const f = await mockRuntime(t);
+  const manifest = await Promise.all(['bin/da.js', 'package.json'].map(async (path) => ({
+    path, sha256: createHash('sha256').update(await readFile(join(f.prepared.source.root, path))).digest('hex'),
+  })));
+  const binding = {
+    package: '@somarc/da-cli',
+    version: 'test',
+    releaseGitHead: 'c'.repeat(40),
+    tarballIntegrity: `sha512-${Buffer.alloc(64).toString('base64')}`,
+    manifest,
+  };
+  const noGit = () => { throw new Error('Package identity must not use ancestor Git'); };
+  return { ...f, binding, noGit };
+}
+
+test('installed package identity requires the reviewed digest and exact file bytes', async (t) => {
+  const f = await packageFixture(t);
+  const { root } = f.prepared.source;
+  const identity = await sourceIdentity(root, f.noGit, f.binding, digest(f.binding));
+  assert.equal(identity.kind, 'reviewed-npm-package');
+  assert.equal(identity.sha, f.binding.releaseGitHead);
+  await assert.rejects(sourceIdentity(root, f.noGit, f.binding, 'wrong'), /reviewed digest/);
+  await writeFile(join(root, 'bin/da.js'), '// changed\n');
+  await assert.rejects(sourceIdentity(root, f.noGit, f.binding, digest(f.binding)), /bytes changed/);
+});
+
+test('package bindings reject incomplete, duplicate, escaping and symlinked entries', async (t) => {
+  const f = await packageFixture(t);
+  const { root } = f.prepared.source;
+  await Promise.all([
+    f.binding.manifest.slice(0, 1),
+    [...f.binding.manifest, f.binding.manifest[0]],
+    [...f.binding.manifest, { path: '../outside', sha256: 'a'.repeat(64) }],
+  ].map(async (manifest) => {
+    const bad = { ...f.binding, manifest };
+    await assert.rejects(sourceIdentity(root, f.noGit, bad, digest(bad)), /manifest/);
+  }));
+  await rm(join(root, 'bin/da.js'));
+  await symlink('../package.json', join(root, 'bin/da.js'));
+  await assert.rejects(sourceIdentity(root, f.noGit, f.binding, digest(f.binding)), /regular contained/);
+});
+
+test('package provenance rejects coerced fields and non-canonical SHA-512 integrity', async (t) => {
+  const f = await packageFixture(t);
+  const patches = [
+    { releaseGitHead: [f.binding.releaseGitHead] },
+    { tarballIntegrity: [f.binding.tarballIntegrity] },
+    { tarballIntegrity: 'sha512-A' },
+    { tarballIntegrity: f.binding.tarballIntegrity.replace(/=$/, '') },
+  ];
+  await Promise.all(patches.map(async (patch) => {
+    const bad = { ...f.binding, ...patch };
+    await assert.rejects(sourceIdentity(f.prepared.source.root, f.noGit, bad, digest(bad)), /package (provenance|integrity)/);
+  }));
+});
+
+test('package identity covers non-entrypoint files and stops dispatch after drift', async (t) => {
+  const f = await packageFixture(t);
+  const { root } = f.prepared.source;
+  await mkdir(join(root, 'src'));
+  await writeFile(join(root, 'src/main.js'), '// imported package code\n');
+  await assert.rejects(sourceIdentity(root, f.noGit, f.binding, digest(f.binding)), /complete first-party/);
+  f.binding.manifest.push({
+    path: 'src/main.js', sha256: createHash('sha256').update(await readFile(join(root, 'src/main.js'))).digest('hex'),
+  });
+  const prepared = await prepare({
+    cliRoot: root,
+    branch: 'main',
+    path: '/how-it-works.html',
+    model: 'jev-1.13.0',
+    packageBinding: f.binding,
+    packageDigest: digest(f.binding),
+  }, f.exec);
+  f.state.onResolve = () => writeFile(join(root, 'src/main.js'), '// changed during preflight\n');
+  const result = await run(prepared, f.response, prepared.preparationDigest, f.exec);
+  assert.equal(f.state.reads, 0);
+  assert.match(result.results[0].primary.reason, /bytes changed/);
 });
